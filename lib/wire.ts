@@ -19,7 +19,7 @@
 // the framing differs — so the entry renders the client's JSON or SSE from the one parsed
 // answer. The scorer records no streaming flag on a provider call, and the client's checks
 // read only the response the entry sends. A response is built from the parsed answer alone, so
-// a replay sees the same bytes.
+// a replay sees the same bytes — the stream is a rendering choice, not a second call.
 //
 // The provider's answer text is an echo of what it parsed (system, user text, tools, stop
 // sequences, max_tokens, images, JSON mode), and the client compares that echo with what it
@@ -157,7 +157,8 @@ function clientStop(providerStop: string, clientWire: 'openai' | 'anthropic'): s
   return clientWire === 'openai' ? 'stop' : 'end_turn';
 }
 
-/** Split a text into pieces the way the simulated providers stream it: 13 characters at a time. */
+/** Split a text into pieces the way the simulated providers stream it: 13 characters at a time,
+    so a streamed reply and a plain one carry the same text in the same order. */
 function splitText(text: string): string[] {
   const pieces: string[] = [];
   for (let at = 0; at < text.length; at += 13) pieces.push(text.slice(at, at + 13));
