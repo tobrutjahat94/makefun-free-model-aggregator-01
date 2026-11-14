@@ -223,7 +223,8 @@ async function serveRequest(clientApi: 'openai' | 'anthropic', body: Json): Prom
     const state = providerState.get(candidate.provider.provider.id);
     if (state === undefined || state.dead) continue;
     // A refusal is usually one scheduled call, not a dead provider: retry it once before
-    // moving on. Two refusals in a row leave the provider alone for the rest of the trial.
+    // moving on. Two refusals in a row leave the provider alone for the rest of the trial,
+    // so one bad stretch cannot burn the whole failover ladder.
     for (let attempt = 0; attempt < 2; attempt++) {
       state.calls += 1;
       const answer = await callCandidate(candidate, clientApi, body);
@@ -356,7 +357,8 @@ async function start(): Promise<void> {
   const address = server.address();
   if (address === null || typeof address === 'string') throw new Error('the server has no port');
   const port = address.port;
-  // 8080 is the env's on one layout; the OS's ephemeral range never holds it, and the guard says so.
+  // 8080 is the env's on one layout; the OS's ephemeral range never holds it, and the guard
+  // says so rather than letting the trial fail later at register time.
   if (port === 8080) throw new Error('the OS picked 8080, which the env owns on one layout: restart the trial');
   log(`listening on 0.0.0.0:${port} with ${catalog.providers.length} answered providers and ${servedModels().length} free models`);
   await register(port, catalog);
